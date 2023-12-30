@@ -12,6 +12,7 @@ contract Bank {
     error Bank__NotEnoughEth(uint256 eth);
     error Bank__OnlyOwnerCanCallThisFunction();
     error Bank__OnlyApprovedOwnerCanCallThisFunction();
+    error Bank__TransferFailed();
 
     event Deposit(address indexed sender, uint256 amount);
     event Withdraw(address indexed sender, uint256 amount);
@@ -83,9 +84,12 @@ contract Bank {
     }
 
     function withdraw(uint256 amount) external enoughBalance(msg.sender, amount) {
-        (bool succ,) = payable(msg.sender).call{value: amount}("");
         s_balances[msg.sender] -= amount;
         s_bankBalance -= amount;
+        (bool success,) = payable(msg.sender).call{value: amount}("");
+        if(!success){
+            revert Bank__TransferFailed();
+        }
         emit Withdraw(msg.sender, amount);
     }
 
