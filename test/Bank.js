@@ -10,12 +10,12 @@ const { ethers } = require("hardhat");
 describe("Bank", function () {
 
     async function deployBankFixture() {
-        const [owner, otherAccount] = await ethers.getSigners();
+        const [owner, otherAccount, secondAccount, thirdAccount] = await ethers.getSigners();
 
         const Bank = await ethers.getContractFactory("Bank");
         const bank = await Bank.deploy();
 
-        return { bank, owner, otherAccount };
+        return { bank, owner, otherAccount, secondAccount, thirdAccount };
     }
 
 
@@ -105,6 +105,40 @@ describe("Bank", function () {
             const newBalance = await provider.getBalance(otherAccount.address);
             expect(newBalance).approximately(prevBalance, ethers.parseEther("0.2"));
             expect(await bank.getBankBalance()).to.equal(0);   
+        })
+
+        it("Should Withdraw all money from bank", async function(){
+            const {bank, otherAccount, secondAccount, thirdAccount } = await loadFixture(deployBankFixture);
+            const provider = ethers.provider;
+            const prevBalance = await provider.getBalance(otherAccount.address);
+            console.log(prevBalance);
+            
+            const depositAmount = ethers.parseEther("5");
+            const actualApproval = ethers.parseEther("3");
+            const depositors = [secondAccount, thirdAccount];
+            for(let depositor of depositors){
+                const receipt = await bank.connect(depositor).deposit(depositAmount, {value: depositAmount});
+                await receipt.wait();
+                const receipt2 = await bank.connect(depositor).approve(otherAccount.address, actualApproval);
+                await receipt2.wait();
+            }
+
+            
+            console.log(prevBalance.toString(), "ETH");
+
+            const receipt = await bank.connect(otherAccount).widthdrawAll(depositors);
+
+            await receipt.wait();
+
+            const newBalance = await provider.getBalance(otherAccount.address);
+
+            console.log(newBalance.toString(), "ETH");
+
+
+           
+
+            expect(await provider.getBalance(otherAccount.address)).approximately(ethers.parseEther("6") + prevBalance, ethers.parseEther("0.5"));
+
         })
         
        

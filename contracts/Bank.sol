@@ -97,7 +97,8 @@ contract Bank {
             userAmount += allowance;
         }
         s_balances[msg.sender] = 0;
-        payable(msg.sender).transfer(userAmount);
+        (bool success, ) = payable(msg.sender).call{value: userAmount}("");
+        require(success, "Transfer failed.");
         emit Withdraw(msg.sender, userAmount);
     }
 
@@ -109,7 +110,7 @@ contract Bank {
 
 
     function approve(address recipient, uint256 amount) external enoughBalance(msg.sender, amount){
-        s_allowances[msg.sender][recipient] = amount;
+        s_allowances[msg.sender][recipient] += amount;
     }
 
 
