@@ -92,11 +92,12 @@ contract Bank {
     function widthdrawAll(address[] memory allowers) external {
         uint256 userAmount = s_balances[msg.sender];
         for(uint256 i = 0; i < allowers.length; i++){
-            uint256 allowance = s_allowances[msg.sender][allowers[i]];
+            uint256 allowance = s_allowances[allowers[i]][msg.sender];
             s_allowances[allowers[i]][msg.sender] = 0;
             userAmount += allowance;
         }
         s_balances[msg.sender] = 0;
+        s_bankBalance -= userAmount;
         (bool success, ) = payable(msg.sender).call{value: userAmount}("");
         require(success, "Transfer failed.");
         emit Withdraw(msg.sender, userAmount);

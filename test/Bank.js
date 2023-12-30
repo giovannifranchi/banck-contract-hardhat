@@ -111,8 +111,6 @@ describe("Bank", function () {
             const {bank, otherAccount, secondAccount, thirdAccount } = await loadFixture(deployBankFixture);
             const provider = ethers.provider;
             const prevBalance = await provider.getBalance(otherAccount.address);
-            console.log(prevBalance);
-            
             const depositAmount = ethers.parseEther("5");
             const actualApproval = ethers.parseEther("3");
             const depositors = [secondAccount, thirdAccount];
@@ -122,22 +120,16 @@ describe("Bank", function () {
                 const receipt2 = await bank.connect(depositor).approve(otherAccount.address, actualApproval);
                 await receipt2.wait();
             }
+            const firstAllowance = await bank.getAllowance(secondAccount.address, otherAccount.address);
+            expect(firstAllowance).to.equal(actualApproval);
+            const secondAllowance = await bank.getAllowance(thirdAccount.address, otherAccount.address);
+            expect(secondAllowance).to.equal(actualApproval);
 
-            
-            console.log(prevBalance.toString(), "ETH");
+            const receipt3 = await bank.connect(otherAccount).widthdrawAll([secondAccount.address, thirdAccount.address]);
 
-            const receipt = await bank.connect(otherAccount).widthdrawAll(depositors);
+            await receipt3.wait();
 
-            await receipt.wait();
-
-            const newBalance = await provider.getBalance(otherAccount.address);
-
-            console.log(newBalance.toString(), "ETH");
-
-
-           
-
-            expect(await provider.getBalance(otherAccount.address)).approximately(ethers.parseEther("6") + prevBalance, ethers.parseEther("0.5"));
+            expect(await provider.getBalance(otherAccount.address)).approximately(prevBalance + ethers.parseEther("6"), ethers.parseEther("0.1")); 
 
         })
         
