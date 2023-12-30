@@ -64,7 +64,7 @@ contract Bank {
         _;
     }
 
-    constructor(){
+    constructor () payable{
         s_owner = msg.sender;
     }
 
@@ -83,9 +83,9 @@ contract Bank {
     }
 
     function withdraw(uint256 amount) external enoughBalance(msg.sender, amount) {
+        (bool succ,) = payable(msg.sender).call{value: amount}("");
         s_balances[msg.sender] -= amount;
         s_bankBalance -= amount;
-        payable(msg.sender).transfer(amount);
         emit Withdraw(msg.sender, amount);
     }
 
