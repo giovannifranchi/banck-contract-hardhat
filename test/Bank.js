@@ -169,5 +169,34 @@ describe("Bank", function () {
             expect(await provider.getBalance(owner.address)).approximately(prevOwnerBalance + ethers.parseEther("10"), ethers.parseEther("0.1"));
 
         })
+
+        it("Should Change Owner in two steps", async function(){
+            const { bank, owner, otherAccount } = await loadFixture(deployBankFixture);
+            const provider = ethers.provider;
+
+            const approveOwnership = await bank.connect(owner).approveOwner(otherAccount.address);
+            await approveOwnership.wait();
+
+            const claimOwnership = await bank.connect(otherAccount).claimOwnership();
+
+            await claimOwnership.wait();
+
+            expect(await bank.getOwner()).to.equal(otherAccount.address);
+        })
+
+        it("Should reset ownership to zero address after it has changed", async function(){
+            const { bank, owner, otherAccount } = await loadFixture(deployBankFixture);
+            const provider = ethers.provider;
+
+            const approveOwnership = await bank.connect(owner).approveOwner(otherAccount.address);
+            await approveOwnership.wait();
+
+            const claimOwnership = await bank.connect(otherAccount).claimOwnership();
+
+            await claimOwnership.wait();
+
+            expect(await bank.getApprovedOwner()).to.equal(ethers.ZeroAddress);
+
+        })
     })
 });
