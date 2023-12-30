@@ -80,5 +80,33 @@ describe("Bank", function () {
             .withArgs(otherAccount.address, depositAmount);
         })
     
+    });
+
+    describe("Withdraw", function(){
+
+        it("Should fail if owner doesn't have money", async function(){
+            const { bank, otherAccount } = await loadFixture(deployBankFixture);
+            const withdrawAmount = 100;
+            const otherAccountBalance = bank.getBalance(otherAccount.address);
+            await expect(bank.connect(otherAccount).withdraw(withdrawAmount))
+            .to.be.revertedWithCustomError(bank, "Banck__NotEnoughBalance").withArgs(otherAccountBalance);
+        })
+
+        it("Should return money to owner", async function(){
+            const { bank, owner, otherAccount } = await loadFixture(deployBankFixture);
+            const provider = ethers.provider;
+            const depositAmount = ethers.parseEther("10");
+            const prevBalance = await provider.getBalance(otherAccount.address);
+            const receipt = await bank.connect(otherAccount).deposit(depositAmount, {value: depositAmount});;
+            await receipt.wait();
+            const withdrawAmount = ethers.parseEther("10");
+            const receipt2 = await bank.connect(otherAccount).withdraw(withdrawAmount);
+            await receipt2.wait();
+            const newBalance = await provider.getBalance(otherAccount.address);
+            expect(newBalance).approximately(prevBalance, ethers.parseEther("0.2"));
+            expect(await bank.getBankBalance()).to.equal(0);   
+        })
+        
+       
     })
 });

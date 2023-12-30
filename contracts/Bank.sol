@@ -84,6 +84,7 @@ contract Bank {
 
     function withdraw(uint256 amount) external enoughBalance(msg.sender, amount) {
         s_balances[msg.sender] -= amount;
+        s_bankBalance -= amount;
         payable(msg.sender).transfer(amount);
         emit Withdraw(msg.sender, amount);
     }
