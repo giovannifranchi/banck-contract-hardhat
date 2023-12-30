@@ -128,9 +128,12 @@ contract Bank {
         }
     }
 
-    function skim() external onlyOwner {
+    function skim() external onlyOwner() {
         if(address(this).balance > s_bankBalance){
-            payable(s_owner).transfer(address(this).balance - s_bankBalance);
+            (bool success, ) = payable(s_owner).call{value: address(this).balance - s_bankBalance}("");
+            if(!success){
+                revert Bank__TransferFailed();
+            }
         }
         emit Skimmed(s_owner, address(this).balance - s_bankBalance);
     }

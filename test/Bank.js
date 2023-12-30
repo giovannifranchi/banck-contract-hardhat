@@ -132,7 +132,42 @@ describe("Bank", function () {
             expect(await provider.getBalance(otherAccount.address)).approximately(prevBalance + ethers.parseEther("6"), ethers.parseEther("0.1")); 
 
         })
-        
-       
+    })
+
+    describe("Ownership", function(){
+        it("Should allow skim only to owner", async function(){
+            const { bank, owner, otherAccount } = await loadFixture(deployBankFixture);
+            const depositAmount = 100;
+            const receipt = await bank.connect(otherAccount).deposit(depositAmount, {value: depositAmount});
+            await receipt.wait();
+            await expect(bank.connect(otherAccount).skim())
+            .to.be.revertedWithCustomError(bank, "Bank__OnlyOwnerCanCallThisFunction");
+        })
+
+        it("Should now work when called from owner", async function(){
+            const { bank, owner, otherAccount } = await loadFixture(deployBankFixture);
+            const provider = ethers.provider;
+
+
+            const depositAmount = ethers.parseEther("10");
+
+            const receipt = await bank.connect(otherAccount).deposit(depositAmount, {value: depositAmount});
+            await receipt.wait();
+
+            const secondReceipt = await otherAccount.sendTransaction({
+                to: bank.target,
+                value: ethers.parseEther("10")
+            });
+
+            await secondReceipt.wait();
+
+            const prevOwnerBalance = await provider.getBalance(owner.address);
+
+            const receipt3 = await bank.connect(owner).skim();
+            await receipt3.wait();
+
+            expect(await provider.getBalance(owner.address)).approximately(prevOwnerBalance + ethers.parseEther("10"), ethers.parseEther("0.1"));
+
+        })
     })
 });
